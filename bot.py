@@ -2,13 +2,16 @@ import os
 import telebot
 import requests
 
-# --------------------- CONFIG (Railway Variables se aayega) ---------------------
+# --------------------- CONFIG ---------------------
 API_TOKEN = os.getenv("BOT_TOKEN")
 OWNER_ID = int(os.getenv("OWNER_ID", "0"))
-FORCE_JOIN_CHANNEL = os.getenv("FORCE_JOIN_CHANNEL", "https://t.me/Aw_Chat_Group")
-CHANNEL_LINK = os.getenv("CHANNEL_LINK", "https://t.me/ll_ABOUT_SASUKE_ll")
-BUTTON_NAME = os.getenv("BUTTON_NAME", "Channel")
 LIKE_API_URL = os.getenv("LIKE_API_URL")  # e.g. http://IP:5002/like
+
+# Force join channels: (username, link, button name)
+CHANNELS = [
+    ("@Aw_Chat_Group", "https://t.me/Aw_Chat_Group", "Aw Chat Group"),
+    ("@ll_ABOUT_SASUKE_ll", "https://t.me/ll_ABOUT_SASUKE_ll", "About Sasuke"),
+]
 
 if not API_TOKEN:
     raise SystemExit("BOT_TOKEN variable set nahi hai!")
@@ -16,22 +19,26 @@ if not API_TOKEN:
 bot = telebot.TeleBot(API_TOKEN)
 
 # --------------------- HELPERS ---------------------
+def is_member_of(chat, user_id):
+    try:
+        member = bot.get_chat_member(chat, user_id)
+        return member.status in ["member", "administrator", "creator"]
+    except Exception as e:
+        print(f"Member check fail ({chat}): {e}")
+        return False
+
+
 def is_user_member(user_id):
     if user_id == OWNER_ID:
         return True
-    try:
-        member = bot.get_chat_member(FORCE_JOIN_CHANNEL, user_id)
-        return member.status in ["member", "administrator", "creator"]
-    except Exception:
-        return False
+    return all(is_member_of(ch[0], user_id) for ch in CHANNELS)
 
 
 def join_markup(verify_text="✅ VERIFY"):
     markup = telebot.types.InlineKeyboardMarkup(row_width=1)
-    markup.add(
-        telebot.types.InlineKeyboardButton(f"🔗 JOIN {BUTTON_NAME}", url=CHANNEL_LINK),
-        telebot.types.InlineKeyboardButton(verify_text, callback_data="verify_membership"),
-    )
+    for _, link, name in CHANNELS:
+        markup.add(telebot.types.InlineKeyboardButton(f"🔗 JOIN {name}", url=link))
+    markup.add(telebot.types.InlineKeyboardButton(verify_text, callback_data="verify_membership"))
     return markup
 
 
@@ -39,10 +46,8 @@ def send_join_required(message):
     bot.reply_to(
         message,
         "🚫 Aᴄᴄᴇss Dᴇɴɪᴇᴅ!\n\n"
-        "Yᴏᴜ Mᴜsᴛ Jᴏɪɴ Oᴜʀ Oғғɪᴄɪᴀʟ Cʜᴀɴɴᴇʟ Fɪʀsᴛ Tᴏ Usᴇ Tʜɪs Bᴏᴛ.\n\n"
-        f"📢 Cʜᴀɴɴᴇʟ: {CHANNEL_LINK}\n\n"
-        "✅ Aғᴛᴇʀ Jᴏɪɴɪɴɢ, Tᴀᴘ Tʜᴇ *Vᴇʀɪғʏ* Bᴜᴛᴛᴏɴ Bᴇʟᴏᴡ.",
-        parse_mode="Markdown",
+        "Bᴏᴛ Usᴇ Kᴀʀɴᴇ Kᴇ Lɪʏᴇ Pᴇʜʟᴇ Nɪᴄʜᴇ Wᴀʟᴇ Dᴏɴᴏ Cʜᴀɴɴᴇʟ Jᴏɪɴ Kᴀʀᴏ.\n\n"
+        "✅ Jᴏɪɴ Kᴀʀɴᴇ Kᴇ Bᴀᴀᴅ Vᴇʀɪғʏ Bᴜᴛᴛᴏɴ Dᴀʙᴀᴏ.",
         reply_markup=join_markup(),
     )
 
@@ -98,14 +103,17 @@ def handle_verify(call):
         )
         bot.answer_callback_query(call.id, "✅ Verified!")
     else:
-        bot.edit_message_text(
-            "🚫 Yᴏᴜ Hᴀᴠᴇɴ'ᴛ Jᴏɪɴᴇᴅ Yᴇᴛ.\n\n"
-            f"📢 Pʟᴇᴀsᴇ Jᴏɪɴ Fɪʀsᴛ: {CHANNEL_LINK}",
-            chat_id=call.message.chat.id,
-            message_id=call.message.message_id,
-            reply_markup=join_markup("✅ VERIFY AGAIN"),
-        )
-        bot.answer_callback_query(call.id, "❌ Please join the channel first!")
+        try:
+            bot.edit_message_text(
+                "🚫 Tᴜᴍɴᴇ Aʙʜɪ Dᴏɴᴏ Cʜᴀɴɴᴇʟ Jᴏɪɴ Nᴀʜɪ Kɪʏᴇ.\n\n"
+                "Pᴇʜʟᴇ Dᴏɴᴏ Jᴏɪɴ Kᴀʀᴏ, Pʜɪʀ Vᴇʀɪғʏ Dᴀʙᴀᴏ.",
+                chat_id=call.message.chat.id,
+                message_id=call.message.message_id,
+                reply_markup=join_markup("✅ VERIFY AGAIN"),
+            )
+        except Exception:
+            pass  # message same hai to Telegram edit reject karta hai
+        bot.answer_callback_query(call.id, "❌ Please join both channels first!", show_alert=True)
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "start_using")
