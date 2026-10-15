@@ -5,7 +5,7 @@ import requests
 # --------------------- CONFIG (Railway Variables se aayega) ---------------------
 API_TOKEN = os.getenv("BOT_TOKEN")
 OWNER_ID = int(os.getenv("OWNER_ID", "0"))
-FORCE_JOIN_CHANNEL = os.getenv("FORCE_JOIN_CHANNEL", "-1003023135446")
+FORCE_JOIN_CHANNEL = os.getenv("FORCE_JOIN_CHANNEL", "https://t.me/Aw_Chat_Group")
 CHANNEL_LINK = os.getenv("CHANNEL_LINK", "https://t.me/ll_ABOUT_SASUKE_ll")
 BUTTON_NAME = os.getenv("BUTTON_NAME", "Channel")
 LIKE_API_URL = os.getenv("LIKE_API_URL")  # e.g. http://IP:5002/like
